@@ -1,0 +1,238 @@
+// Tokens
+
+LINE_BREAK ::= '\r?\n'
+WHITESPACE ::= '\s+'
+IDENTIFIER ::= '[a-zA-Z$_][a-zA-Z$_0-9]*'
+
+ARROW ::= '->'
+COMMA ::= ','
+PERIOD ::= '.'
+COLON ::= ':'
+SEMICOLON ::= ';'
+OPEN_ANGLE ::= '<'
+CLOSE_ANGLE ::= '>'
+OPEN_CURLY ::= '{'
+CLOSE_CURLY ::= '}'
+OPEN_PAREN ::= '('
+CLOSE_PAREN ::= ')'
+SIMPLE_STRING ::= '".*?"'
+
+IMPORT_KEYWORD ::= 'import'
+EXPORT_KEYWORD ::= 'export'
+FROM_KEYWORD ::= 'from'
+WITHOUT_KEYWORD ::= 'without'
+AS_KEYWORD ::= 'as'
+ABSTRACT_KEYWORD ::= 'abstract'
+CLASS_KEYWORD ::= 'class'
+EXTENDS_KEYWORD ::= 'extends'
+IMPLEMENTS_KEYWORD ::= 'implements'
+SYNC_KEYWORD ::= 'sync'
+SYNC_STAR_KEYWORD ::= 'sync*'
+ASYNC_KEYWORD ::= 'async'
+ASYNC_STAR_KEYWORD ::= 'async*'
+MUTATION_KEYWORD ::= 'mutation'
+LET_KEYWORD ::= 'let'
+VAR_KEYWORD ::= 'var'
+TYPEALIAS_KEYWORD ::= 'typealias'
+INIT_KEYWORD ::= 'init'
+THIS_KEYWORD ::= 'this'
+
+ASSIGNMENT_OPERATOR ::= '='
+
+
+// AST
+
+script ::=
+  topLevelDeclaration*
+
+topLevelDeclaration ::=
+  importDirective |
+  exportDirective |
+  classDeclaration |
+  immutableValueDeclaration |
+  functionDeclaration |
+  typealiasDeclaration
+
+endOfStatement ::=
+  LINE_BREAK | SEMICOLON
+
+importDirective ::=
+  IMPORT_KEYWORD
+  WITHOUT_KEYWORD?
+  (simpleIdentifierList FROM_KEYWORD)?
+  SIMPLE_STRING
+  (AS_KEYWORD simpleIdentifier)?
+  endOfStatement
+
+exportDirective ::=
+  EXPORT_KEYWORD
+  (
+    classDeclaration
+  |
+    functionDeclaration
+  |
+    immutableValueDeclaration
+  |
+    (simpleIdentifierList FROM_KEYWORD)?
+    SIMPLE_STRING
+  |
+    simpleIdentifierList
+  )
+  endOfStatement
+
+simpleIdentifierList ::=
+  simpleIdentifier
+  (COMMA simpleIdentifier)*
+
+simpleIdentifier ::=
+  IDENTIFIER
+
+namespacedIdentifier ::=
+  simpleIdentifier
+  (PERIOD simpleIdentifier)?
+
+namespacedIdentifierList ::=
+  namespacedIdentifier
+  (COMMA namespacedIdentifier)*
+
+classDeclaration ::=
+  ABSTRACT_KEYWORD?
+  CLASS_KEYWORD
+  simpleIdentifier
+  (EXTENDS_KEYWORD namespacedIdentifierList)?
+  (IMPLEMENTS_KEYWORD namespacedIdentifierList)?
+  classBody?
+
+classBody ::=
+  OPEN_CURLY
+  classLevelDeclaration*
+  CLOSE_CURLY
+
+classLevelDeclaration ::=
+  functionDeclaration |
+  mutationDeclaration |
+  immutableValueDeclaration |
+  initializerDeclaration
+
+functionDeclaration ::=
+  simpleIdentifier
+  argumentList?
+  functionModifier?
+  returnType?
+  functionBody
+
+argumentList ::=
+  OPEN_PAREN
+  (
+    (normalArgumentList COMMA namedArgumentList) |
+    (normalArgumentList) |
+    (namedArgumentList)
+  )?
+  CLOSE_PAREN
+
+normalArgumentList ::=
+  nameAndType
+  (COMMA nameAndType)*
+
+namedArgumentList ::=
+  OPEN_CURLY
+  normalArgumentList
+  CLOSE_CURLY
+
+nameAndType ::=
+  simpleIdentifier
+  (COLON typeExpression)?
+
+typeExpression ::=
+  typeName |
+  signatureExpression
+
+typeName ::=
+  simpleIdentifier
+  (OPEN_ANGLE typeExpressionList CLOSE_ANGLE)?
+
+typeExpressionList ::=
+  typeExpression
+  (COMMA typeExpression)*
+
+signatureExpression ::=
+  (typeName | argumentListSignatureExpression)
+  returnType
+
+argumentListSignatureExpression ::=
+  OPEN_PAREN
+  typeExpressionList
+  CLOSE_PAREN
+
+functionModifier ::=
+  SYNC_KEYWORD |
+  SYNC_STAR_KEYWORD |
+  ASYNC_KEYWORD |
+  ASYNC_STAR_KEYWORD
+
+returnType ::=
+  ARROW
+  typeExpression
+
+mutationDeclaration ::=
+  MUTATION_KEYWORD
+  simpleIdentifier
+  argumentList
+  functionModifier?
+  functionBody
+
+functionBody ::=
+  OPEN_CURLY
+  blockLevelDeclaration*
+  CLOSE_CURLY
+
+immutableValueDeclaration ::=
+  LET_KEYWORD
+  valueDeclaration
+
+mutableValueDeclaration ::=
+  VAR_KEYWORD
+  valueDeclaration
+
+valueDeclaration ::=
+  nameAndType
+  (ASSIGNMENT_OPERATOR expression)?
+  endOfStatement
+
+typealiasDeclaration ::=
+  TYPEALIAS_KEYWORD
+  simpleIdentifier
+  COLON
+  typeExpression
+  endOfStatement
+
+initializerDeclaration ::=
+  INIT_KEYWORD
+  initializerArgumentList
+  functionBody?
+
+initializerArgumentList ::=
+  OPEN_PAREN
+  (
+    (normalInitializerArgumentList COMMA namedInitializerArgumentList) |
+    (normalInitializerArgumentList) |
+    (namedInitializerArgumentList)
+  )?
+  CLOSE_PAREN
+
+normalInitializerArgumentList ::=
+  (
+    THIS_KEYWORD PERIOD simpleIdentifier
+  |
+    nameAndType
+    (COMMA nameAndType)*
+  )
+
+namedInitializerArgumentList ::=
+  OPEN_CURLY
+  normalInitializerArgumentList
+  CLOSE_CURLY
+
+blockLevelDeclaration ::= // TODO
+
+expression ::= // TODO

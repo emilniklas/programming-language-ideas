@@ -185,26 +185,10 @@ import A, B from "path/to/my_module" as my_module // my_module.A and my_module.B
 import without g from "path/to/my_module" // A, B, and f are available
 ```
 
-Identifiers can be piped through by exporting imported identifiers:
+Identifiers can be piped through by exporting identifiers from other modules:
 ```
 export "path/to/some_module" // export everything
 export A from "path/to/my_module" // export only A
-
-import g from "path/to/my_module"
-export g // explicit
-```
-
-Identifiers can be exported under namespace, a pattern that can be repeated for longer namespaced identifiers.
-Long namespaced identifiers can be explicitly subtracted on import.
-```
-// file a
-export class X {}
-
-// file b
-export "a" as a
-
-// file c
-import a.X as Z "b" as b // b.Z is available, refering to class X in "a"
 ```
 
 ## Handling world state
