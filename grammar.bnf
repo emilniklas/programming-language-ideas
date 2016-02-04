@@ -1,6 +1,7 @@
 // Tokens
 
-LINE_BREAK ::= '\r?\n'
+EOF ::= '$'
+EOL ::= '\r?\n'
 WHITESPACE ::= '\s+'
 IDENTIFIER ::= '[a-zA-Z$_][a-zA-Z$_0-9]*'
 
@@ -15,6 +16,7 @@ OPEN_CURLY ::= '{'
 CLOSE_CURLY ::= '}'
 OPEN_PAREN ::= '('
 CLOSE_PAREN ::= ')'
+QUESTION_MARK ::= '?'
 SIMPLE_STRING ::= '".*?"'
 
 IMPORT_KEYWORD ::= 'import'
@@ -37,7 +39,11 @@ TYPEALIAS_KEYWORD ::= 'typealias'
 INIT_KEYWORD ::= 'init'
 THIS_KEYWORD ::= 'this'
 
+NULL_LITERAL ::= 'null'
+
 ASSIGNMENT_OPERATOR ::= '='
+MULTIPLICATION_OPERATOR ::= '*'
+ADD_OPERATOR ::= '+'
 
 
 // AST
@@ -54,7 +60,7 @@ topLevelDeclaration ::=
   typealiasDeclaration
 
 endOfStatement ::=
-  LINE_BREAK | SEMICOLON
+  EOL | SEMICOLON | EOF
 
 importDirective ::=
   IMPORT_KEYWORD
@@ -98,7 +104,7 @@ namespacedIdentifierList ::=
 classDeclaration ::=
   ABSTRACT_KEYWORD?
   CLASS_KEYWORD
-  simpleIdentifier
+  genericIdentifier
   (EXTENDS_KEYWORD namespacedIdentifierList)?
   (IMPLEMENTS_KEYWORD namespacedIdentifierList)?
   classBody?
@@ -115,28 +121,31 @@ classLevelDeclaration ::=
   initializerDeclaration
 
 functionDeclaration ::=
-  simpleIdentifier
-  argumentList?
+  functionSignature
+  functionBody
+
+functionSignature ::=
+  genericIdentifier
+  argumentList
   functionModifier?
   returnType?
-  functionBody
 
 argumentList ::=
   OPEN_PAREN
   (
-    (normalArgumentList COMMA namedArgumentList) |
-    (normalArgumentList) |
-    (namedArgumentList)
+    (normalParameterList COMMA namedParameterList) |
+    (normalParameterList) |
+    (namedParameterList)
   )?
   CLOSE_PAREN
 
-normalArgumentList ::=
+normalParameterList ::=
   nameAndType
   (COMMA nameAndType)*
 
-namedArgumentList ::=
+namedParameterList ::=
   OPEN_CURLY
-  normalArgumentList
+  normalParameterList
   CLOSE_CURLY
 
 nameAndType ::=
@@ -150,6 +159,7 @@ typeExpression ::=
 typeName ::=
   simpleIdentifier
   (OPEN_ANGLE typeExpressionList CLOSE_ANGLE)?
+  QUESTION_MARK?
 
 typeExpressionList ::=
   typeExpression
@@ -176,7 +186,7 @@ returnType ::=
 
 mutationDeclaration ::=
   MUTATION_KEYWORD
-  simpleIdentifier
+  genericIdentifier
   argumentList
   functionModifier?
   functionBody
@@ -201,26 +211,26 @@ valueDeclaration ::=
 
 typealiasDeclaration ::=
   TYPEALIAS_KEYWORD
-  simpleIdentifier
+  genericIdentifier
   COLON
   typeExpression
   endOfStatement
 
 initializerDeclaration ::=
   INIT_KEYWORD
-  initializerArgumentList
+  initializerParameterList
   functionBody?
 
-initializerArgumentList ::=
+initializerParameterList ::=
   OPEN_PAREN
   (
-    (normalInitializerArgumentList COMMA namedInitializerArgumentList) |
-    (normalInitializerArgumentList) |
-    (namedInitializerArgumentList)
+    (normalInitializerParameterList COMMA namedInitializerParameterList) |
+    (normalInitializerParameterList) |
+    (namedInitializerParameterList)
   )?
   CLOSE_PAREN
 
-normalInitializerArgumentList ::=
+normalInitializerParameterList ::=
   (
     THIS_KEYWORD PERIOD simpleIdentifier
   |
@@ -228,11 +238,62 @@ normalInitializerArgumentList ::=
     (COMMA nameAndType)*
   )
 
-namedInitializerArgumentList ::=
+namedInitializerParameterList ::=
   OPEN_CURLY
-  normalInitializerArgumentList
+  normalInitializerParameterList
   CLOSE_CURLY
+
+genericIdentifier ::=
+  simpleIdentifier
+  (
+    OPEN_ANGLE
+    simpleIdentifierList
+    CLOSE_ANGLE
+  )?
 
 blockLevelDeclaration ::= // TODO
 
-expression ::= // TODO
+expression ::=
+  (
+    operation
+  |
+    functionCall
+  |
+    literal
+  |
+    simpleIdentifier
+  )
+
+operation ::=
+  expression
+  operator
+  expression
+
+operator ::=
+  ADD_OPERATOR |
+  MULTIPLICATION_OPERATOR
+  // TODO
+
+functionCall ::=
+  simpleIdentifier
+  OPEN_PAREN
+  (
+    normalArgumentList
+    (COMMA namedArgumentList)?
+  |
+    namedArgumentList
+  )
+  CLOSE_PAREN
+
+normalArgumentList ::=
+  expression?
+  (COMMA expression)*
+
+namedArgumentList ::=
+  nameAndExpression?
+  (COMMA nameAndExpression)*
+
+nameAndExpression ::=
+  simpleIdentifier
+  COLON
+  expression
